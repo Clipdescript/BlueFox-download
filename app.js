@@ -1,46 +1,39 @@
 (() => {
   const repo = 'Clipdescript/BlueFox';
-  const releasesApi = `https://api.github.com/repos/${repo}/releases/latest`;
   const downloadBtn = document.getElementById('downloadBtn');
   const versionInfo = document.getElementById('versionInfo');
   const fallback = document.getElementById('fallback');
 
   async function init() {
     try {
-      downloadBtn.textContent = 'Recherche de la dernière version…';
-      const res = await fetch(releasesApi, { headers: { 'Accept': 'application/vnd.github+json' } });
-      if (!res.ok) throw new Error('API GitHub indisponible');
+      downloadBtn.textContent = 'Recherche de la derniere version...';
+      const res = await fetch(
+        'https://api.github.com/repos/' + repo + '/releases/latest',
+        { cache: 'no-store' }
+      );
+      if (!res.ok) throw new Error('API ' + res.status);
       const json = await res.json();
-
       const assets = Array.isArray(json.assets) ? json.assets : [];
-      const exe = assets.find(a =>
-        /setup|installer/i.test(a.name) && /\.exe$/i.test(a.name)
-      ) || assets.find(a => /\.exe$/i.test(a.name));
-
+      const exe = assets.find(a => /\.exe$/i.test(a.name) && !/blockmap/i.test(a.name));
       if (exe && exe.browser_download_url) {
         downloadBtn.href = exe.browser_download_url;
-        downloadBtn.setAttribute('download', exe.name);
+        downloadBtn.textContent = 'Telecharger BlueFox pour Windows';
         downloadBtn.addEventListener('click', (e) => {
           e.preventDefault();
-          downloadBtn.textContent = 'Téléchargement…';
+          downloadBtn.textContent = 'Telechargement...';
           window.location.href = exe.browser_download_url;
-          setTimeout(() => {
-            downloadBtn.textContent = 'Télécharger BlueFox pour Windows';
-          }, 1500);
+          setTimeout(() => { downloadBtn.textContent = 'Telecharger BlueFox pour Windows'; }, 2000);
         }, { once: true });
-        downloadBtn.textContent = 'Télécharger BlueFox pour Windows';
-        versionInfo.textContent = `Version ${json.tag_name || json.name || ''}`.trim();
+        versionInfo.textContent = 'Version ' + (json.tag_name || '');
       } else {
-        downloadBtn.href = `https://github.com/${repo}/releases`;
-        downloadBtn.textContent = 'Ouvrir la page des Releases';
-        fallback.classList.remove('hidden');
+        throw new Error('Aucun exe');
       }
     } catch (e) {
-      downloadBtn.href = `https://github.com/${repo}/releases`;
-      downloadBtn.textContent = 'Ouvrir la page des Releases';
+      downloadBtn.href = 'https://github.com/' + repo + '/releases/latest';
+      downloadBtn.textContent = 'Voir la derniere version sur GitHub';
+      downloadBtn.setAttribute('target', '_blank');
       fallback.classList.remove('hidden');
     }
   }
-
   init();
 })();
